@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Sockets app</title>
+  </head>
+  <body>
+    <header>
+      <h1>Web Sockets Chat Application</h1>
+    </header>
+    <main>
+      <div class="center">
+        <form id="chatroom-selection">
+          <label for="chatroom">Select a chatroom:</label>
+          <select id="chatroom" name="chatroom">
+            <option value="general">General</option>
+            <option value="technology">Technology</option>
+            <option value="sports">Sports</option>
+            <option value="music">Music</option>
+          </select>
+          <button type="submit">Join Chatroom</button>
+        </form>
+      </div>
+    </main>
+    <footer>
+      <p>&copy; 2025 Jonathan Gil</p>
+    </footer>
+
+    <script>
+      var selectedChat = "general";
+
+      function changeChatroom(event) {
+        event.preventDefault();
+        selectedChat = document.getElementById("chatroom").value;
+        console.log("Selected chatroom:", selectedChat);
+
+        return false;
+      }
+
+      function sendMessage(message) {
+        console.log("Sending message to chatroom:", selectedChat);
+        const newMessage = document.getElementById("message-input").value;
+        console.log("Message content:", newMessage);
+      }
+
+      window.onload = function () {
+        if (window["WebSocket"]) {
+          document
+            .getElementById("chatroom-selection")
+            .addEventListener("submit", changeChatroom);
+          document
+            .getElementById("message-form")
+            .addEventListener("submit", sendMessage);
+        } else {
+          alert("WebSocket is not supported by your browser");
+        }
+      };
+    </script>
+  </body>
+</html>
