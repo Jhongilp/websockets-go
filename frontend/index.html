@@ -46,12 +46,7 @@
 
       window.onload = function () {
         if (window["WebSocket"]) {
-          document
-            .getElementById("chatroom-selection")
-            .addEventListener("submit", changeChatroom);
-          document
-            .getElementById("message-form")
-            .addEventListener("submit", sendMessage);
+          const conn = new WebSocket(`ws://${document.location.host}/ws`);
         } else {
           alert("WebSocket is not supported by your browser");
         }
