@@ -43,6 +43,7 @@ func (m *Manager) ServeWS(w http.ResponseWriter, r *http.Request) {
 	// Start client processes
 	println("Client connected, waiting for messages...")
 	go client.readMessages()
+	go client.writeMessages()
 
 }
 

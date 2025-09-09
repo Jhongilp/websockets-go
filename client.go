@@ -11,12 +11,16 @@ type ClientList map[*Client]bool
 type Client struct {
 	connection *websocket.Conn
 	manager    *Manager
+
+	// egress is used to avoid concurrent writes on the web socket connection
+	egress chan []byte
 }
 
 func NewClient(conn *websocket.Conn, manager *Manager) *Client {
 	return &Client{
 		connection: conn,
 		manager:    manager,
+		egress:     make(chan []byte),
 	}
 }
 
@@ -39,5 +43,28 @@ func (c *Client) readMessages() {
 		log.Printf("message received: %s\n", payload)
 		log.Printf("message type: %d\n", messageType)
 
+	}
+}
+
+func (c *Client) writeMessages() {
+	defer func() {
+		c.manager.removeClient(c)
+	}()
+
+	for {
+		select {
+		case message, ok := <-c.egress:
+			if !ok {
+				if err := c.connection.WriteMessage(websocket.CloseMessage, nil); err != nil {
+					log.Println("connection closed:", err)
+				}
+				return
+			}
+
+			if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
+				log.Println("failed to send message:", err)
+			}
+			log.Println("message sent")
+		}
 	}
 }
