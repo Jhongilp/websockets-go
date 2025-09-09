@@ -40,6 +40,11 @@ func (c *Client) readMessages() {
 			}
 			break
 		}
+
+		for wsclient := range c.manager.clients {
+			wsclient.egress <- payload
+		}
+
 		log.Printf("message received: %s\n", payload)
 		log.Printf("message type: %d\n", messageType)
 
