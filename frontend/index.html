@@ -19,6 +19,10 @@
             <option value="sports">Sports</option>
             <option value="music">Music</option>
           </select>
+          <textarea
+            id="message-input"
+            placeholder="Type your message here..."
+          ></textarea>
           <button type="submit">Join Chatroom</button>
         </form>
       </div>
@@ -28,6 +32,7 @@
     </footer>
 
     <script>
+      let conn;
       var selectedChat = "general";
 
       function changeChatroom(event) {
@@ -39,14 +44,29 @@
       }
 
       function sendMessage(message) {
+        event.preventDefault();
         console.log("Sending message to chatroom:", selectedChat);
         const newMessage = document.getElementById("message-input").value;
         console.log("Message content:", newMessage);
+        if (newMessage) {
+          conn?.send(
+            JSON.stringify({
+              chatroom: selectedChat,
+              message: newMessage,
+            })
+          );
+          document.getElementById("message-input").value = "";
+        }
+        return false;
       }
 
       window.onload = function () {
+        document
+          .getElementById("chatroom-selection")
+          .addEventListener("submit", sendMessage);
+
         if (window["WebSocket"]) {
-          const conn = new WebSocket(`ws://${document.location.host}/ws`);
+          conn = new WebSocket(`ws://${document.location.host}/ws`);
         } else {
           alert("WebSocket is not supported by your browser");
         }

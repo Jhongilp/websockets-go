@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -14,10 +15,15 @@ var (
 	}
 )
 
-type Manager struct{}
+type Manager struct {
+	clients ClientList
+	sync.RWMutex
+}
 
 func NewManager() *Manager {
-	return &Manager{}
+	return &Manager{
+		clients: make(ClientList),
+	}
 }
 
 func (m *Manager) ServeWS(w http.ResponseWriter, r *http.Request) {
@@ -31,5 +37,28 @@ func (m *Manager) ServeWS(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	conn.Close()
+	client := NewClient(conn, m)
+	m.addClient(client)
+
+	// Start client processes
+	println("Client connected, waiting for messages...")
+	go client.readMessages()
+
+}
+
+func (m *Manager) addClient(client *Client) {
+	m.Lock()
+	defer m.Unlock()
+
+	m.clients[client] = true
+}
+
+func (m *Manager) removeClient(client *Client) {
+	m.Lock()
+	defer m.Unlock()
+
+	if _, ok := m.clients[client]; ok {
+		client.connection.Close()
+		delete(m.clients, client)
+	}
 }
