@@ -33,7 +33,42 @@
 
     <script>
       let conn;
-      var selectedChat = "general";
+      let selectedChat = "general";
+
+      class Event {
+        constructor(type, payload) {
+          this.type = type;
+          this.data = payload;
+        }
+      }
+
+      function routeEvent(event) {
+        if (!(event instanceof Event)) {
+          console.error("Invalid event:", event);
+          return;
+        }
+
+        switch (event.type) {
+          case "message":
+            console.log("New message event:", event.data);
+            break;
+          default:
+            console.log("Unknown event type:", event.type);
+        }
+      }
+
+      function sendEvent(event) {
+        if (!(event instanceof Event)) {
+          console.error("Invalid event:", event);
+          return;
+        }
+
+        if (conn && conn.readyState === WebSocket.OPEN) {
+          conn.send(JSON.stringify(event));
+        } else {
+          console.error("WebSocket connection is not open");
+        }
+      }
 
       function changeChatroom(event) {
         event.preventDefault();
@@ -49,12 +84,11 @@
         const newMessage = document.getElementById("message-input").value;
         console.log("Message content:", newMessage);
         if (newMessage) {
-          conn?.send(
-            JSON.stringify({
-              chatroom: selectedChat,
-              message: newMessage,
-            })
-          );
+          const event = new Event("message", {
+            chatroom: selectedChat,
+            message: newMessage,
+          });
+          sendEvent(event);
           document.getElementById("message-input").value = "";
         }
         return false;
@@ -70,6 +104,8 @@
 
           conn.onmessage = function (e) {
             console.log("Message received:", e, e.data);
+            const event = JSON.parse(e.data);
+            routeEvent(event);
           };
         } else {
           alert("WebSocket is not supported by your browser");
