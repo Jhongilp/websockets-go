@@ -84,7 +84,7 @@
         const newMessage = document.getElementById("message-input").value;
         console.log("Message content:", newMessage);
         if (newMessage) {
-          const event = new Event("message", {
+          const event = new Event("send_message", {
             chatroom: selectedChat,
             message: newMessage,
           });
