@@ -8,6 +8,7 @@
   <body>
     <header>
       <h1>Web Sockets Chat Application</h1>
+      <h3 id="connection-status">Connected to WebSocket server: false</h3>
     </header>
     <main>
       <div class="center">
@@ -24,6 +25,17 @@
             placeholder="Type your message here..."
           ></textarea>
           <button type="submit">Join Chatroom</button>
+        </form>
+      </div>
+
+      <!-- add a form with username and password -->
+      <div>
+        <form id="login-form">
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required />
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required />
+          <button type="submit">Login</button>
         </form>
       </div>
     </main>
@@ -94,13 +106,59 @@
         return false;
       }
 
-      window.onload = function () {
-        document
-          .getElementById("chatroom-selection")
-          .addEventListener("submit", sendMessage);
+      function login() {
+        // grab username and password from the form
+        event.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        console.log("Logging in with username:", username);
+        console.log("Logging in with password:", password);
 
+        fetch("/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ username, password }),
+          mode: "cors",
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Login successful:", data);
+            // maybe store the token in localStorage or a cookie
+            connectWebsocket(data.otp);
+          })
+          .catch((error) => {
+            console.error("There was a problem with the login request:", error);
+            alert("Login failed: " + error.message);
+            return false;
+          });
+      }
+
+      function connectWebsocket(otp) {
         if (window["WebSocket"]) {
-          conn = new WebSocket(`ws://${document.location.host}/ws`);
+          conn = new WebSocket(`ws://${document.location.host}/ws?otp=${otp}`);
+
+          conn.onopen = function () {
+            console.log("WebSocket connection opened");
+            document.getElementById("connection-status").innerText =
+              "Connected to WebSocket server: true";
+          };
+
+          conn.onclose = function (e) {
+            console.log("WebSocket connection closed", e);
+            document.getElementById("connection-status").innerText =
+              "Connected to WebSocket server: false";
+          };
+
+          conn.onerror = function (err) {
+            console.error("WebSocket error:", err);
+          };
 
           conn.onmessage = function (e) {
             console.log("Message received:", e, e.data);
@@ -110,6 +168,14 @@
         } else {
           alert("WebSocket is not supported by your browser");
         }
+      }
+
+      window.onload = function () {
+        document
+          .getElementById("chatroom-selection")
+          .addEventListener("submit", sendMessage);
+
+        document.getElementById("login-form").onsubmit = login;
       };
     </script>
   </body>
